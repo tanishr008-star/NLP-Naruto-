@@ -1,0 +1,6 @@
+**/__pycache__/
+# Frontend dependencies and build
+**/Subtitles
+*.pyc
+*.pyo
+*.pyd

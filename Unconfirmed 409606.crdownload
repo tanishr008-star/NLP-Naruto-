@@ -1,0 +1,63 @@
+import gradio as gr
+from theme_classifier import load_model, get_dataset_with_themes
+from character_network import named_entity, generate_character_relationship, generate_network
+theme_classifier = load_model()
+
+def get_themes(theme_list_str, save_path):
+    theme_list = theme_list_str.split(',')
+    output_df = get_dataset_with_themes(theme_classifier, theme_list, save_path)
+    theme_list = [theme for theme in theme_list if theme != 'dialogue']
+    output_df = output_df[theme_list]
+    output_df = output_df[theme_list].sum().reset_index()
+    output_df.columns = ['Theme','Score']
+
+    output_chart = gr.BarPlot(
+        output_df,
+        x="Theme",
+        y="Score",
+        title="Series Themes",
+        tooltip=["Theme","Score"],
+        vertical=False,
+        width=500,
+        height=260
+    )
+
+    return output_chart
+
+def get_character_network(ner_path):
+    df = named_entity(ner_path)
+    relationship_df = generate_character_relationship(df)
+    html = generate_network(relationship_df)
+    return html
+
+def main():
+    with gr.Blocks() as iface:
+        with gr.Row():
+            with gr.Column():
+                gr.HTML("<h1>Theme Classification (Zero Shot Claasifiers)</h1>")
+                with gr.Row():
+                    with gr.Column():
+                        plot = gr.BarPlot()
+                    with gr.Column():
+                        theme_list = gr.Textbox(label="Themes")
+                        save_path = gr.Textbox(label="Save Path")
+                        get_themes_button =gr.Button("Get Themes")
+                        get_themes_button.click(get_themes, inputs=[theme_list, save_path], outputs=[plot])
+
+
+        with gr.Row():
+            with gr.Column():
+                gr.HTML("<h1>Character Network (NERs and Graphs)</h1>")
+                with gr.Row():
+                    with gr.Column():
+                        network_html = gr.HTML()
+                    with gr.Column():
+                        ner_path = gr.Textbox(label="NERs save path")
+                        get_network_graph_button = gr.Button("Get Character Network")
+                        get_network_graph_button.click(get_character_network, inputs=[ner_path], outputs=[network_html])
+    iface.launch(share=True)
+
+
+if __name__== "__main__":
+    main()
+
